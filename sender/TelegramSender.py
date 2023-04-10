@@ -34,10 +34,10 @@ class TelegramSender:
         self.logger = logging.getLogger("telegram-sender")
 
     def is_alert_chat_enabled(self):
-        return self.alert_chat_id != 0 and self.alert_chat_id != self.chat_id
+        return self.alert_chat_id not in [0, self.chat_id]
 
     def send_message(self, message, is_alert_chat=False):
-        chat_id = self.chat_id if not is_alert_chat else self.alert_chat_id
+        chat_id = self.alert_chat_id if is_alert_chat else self.chat_id
 
         def push_message(bot, chat_id, message):
             self.logger.info(message)
@@ -66,14 +66,14 @@ class TelegramSender:
     def send_generic_message(self, message, args=None, is_alert_chat=False):
         if args is not None:
             message = message.format(args)
-        self.send_message(self.bot_emoji + " " + message, is_alert_chat)
+        self.send_message(f"{self.bot_emoji} {message}", is_alert_chat)
 
     def send_report_message(self, message, args=None, is_alert_chat=False):
         if args is not None:
             message = message.format(args)
-        self.send_message(self.top_emoji + " " + message, is_alert_chat)
+        self.send_message(f"{self.top_emoji} {message}", is_alert_chat)
 
     def send_news_message(self, message, args=None, is_alert_chat=False):
         if args is not None:
             message = message.format(args)
-        self.send_message(self.news_emoji + " " + message, is_alert_chat)
+        self.send_message(f"{self.news_emoji} {message}", is_alert_chat)
