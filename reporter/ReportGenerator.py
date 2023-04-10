@@ -150,38 +150,33 @@ Open in [Binance Spot](https://www.binance.com/en/trade/{0})\
         if not top_pump_enabled or not top_dump_enabled:
             return
 
-        message = "*[{0} Interval]*\n\n".format(interval)
+        pump_sorted_list = sorted(
+            assets,
+            key=lambda item: item[interval]["change_current"],
+            reverse=True,
+        )[:no_of_reported_coins]
 
-        if top_pump_enabled:
-            pump_sorted_list = sorted(
-                assets,
-                key=lambda item: item[interval]["change_current"],
-                reverse=True,
-            )[0:no_of_reported_coins]
-
-            message += "{0} *Top {1} Pumps*\n".format(
-                self.pump_emoji, no_of_reported_coins
+        message = "*[{0} Interval]*\n\n".format(
+            interval
+        ) + "{0} *Top {1} Pumps*\n".format(self.pump_emoji, no_of_reported_coins)
+        for asset in pump_sorted_list:
+            message += "- {0}: _{1:.2f}_%\n".format(
+                asset["symbol"], asset[interval]["change_current"] * 100
             )
+        message += "\n"
 
-            for asset in pump_sorted_list:
-                message += "- {0}: _{1:.2f}_%\n".format(
-                    asset["symbol"], asset[interval]["change_current"] * 100
-                )
-            message += "\n"
+        dump_sorted_list = sorted(
+            assets, key=lambda item: item[interval]["change_current"]
+        )[:no_of_reported_coins]
 
-        if top_dump_enabled:
-            dump_sorted_list = sorted(
-                assets, key=lambda item: item[interval]["change_current"]
-            )[0:no_of_reported_coins]
+        message += "{0} *Top {1} Dumps*\n".format(
+            self.dump_emoji, no_of_reported_coins
+        )
 
-            message += "{0} *Top {1} Dumps*\n".format(
-                self.dump_emoji, no_of_reported_coins
+        for asset in dump_sorted_list:
+            message += "- {0}: _{1:.2f}_%\n".format(
+                asset["symbol"], asset[interval]["change_current"] * 100
             )
-
-            for asset in dump_sorted_list:
-                message += "- {0}: _{1:.2f}_%\n".format(
-                    asset["symbol"], asset[interval]["change_current"] * 100
-                )
 
         if additional_stats_enabled:
             if top_pump_enabled or top_dump_enabled:

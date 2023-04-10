@@ -56,24 +56,17 @@ class BinancePumpAndDumpAlerter:
 
         self.chart_intervals = {}
         for interval in chart_intervals:
-            self.chart_intervals[interval] = {}
-            self.chart_intervals[interval][
-                "value"
-            ] = ConversionUtils.duration_to_seconds(interval)
-
+            self.chart_intervals[interval] = {
+                "value": ConversionUtils.duration_to_seconds(interval)
+            }
         self.top_report_intervals = {}
         for interval in top_report_intervals:
-            self.top_report_intervals[interval] = {}
-
-            # Determine initial start time for TPD. Should conveniently solve original 0% issue together.
-            if top_report_nearest_hour:
-                self.top_report_intervals[interval]["start"] = nearest_hour
-            else:
-                self.top_report_intervals[interval]["start"] = self.initial_time
-
-            self.top_report_intervals[interval][
-                "value"
-            ] = ConversionUtils.duration_to_seconds(interval)
+            self.top_report_intervals[interval] = {
+                "start": nearest_hour
+                if top_report_nearest_hour
+                else self.initial_time,
+                "value": ConversionUtils.duration_to_seconds(interval),
+            }
 
     @staticmethod
     def extract_ticker_data(symbol, assets):
@@ -86,11 +79,7 @@ class BinancePumpAndDumpAlerter:
         asset = {"symbol": symbol, "price": [], "volume": []}
 
         for interval in chart_intervals:
-            asset[interval] = {}
-            asset[interval]["change_current"] = 0
-            asset[interval]["change_last"] = 0
-            asset[interval]["change_volume"] = 0
-
+            asset[interval] = {"change_current": 0, "change_last": 0, "change_volume": 0}
         return asset
 
     def retrieve_exchange_assets(self, api_url):
@@ -117,19 +106,14 @@ class BinancePumpAndDumpAlerter:
             return True
 
         # Filter symbols in blacklist if set - This DOES NOT IMPACT the pairsOfInterest feature
-        if len(blacklist) > 0:
-            if symbol in blacklist:
-                self.logger.info(
-                    "Ignoring symbol found in blacklist: %s.", symbol)
-                return False
+        if len(blacklist) > 0 and symbol in blacklist:
+            self.logger.info(
+                "Ignoring symbol found in blacklist: %s.", symbol)
+            return False
 
-        # Filter pairsOfInterest to reduce the noise. E.g. BUSD, USDT, ETH, BTC
-        is_in_pairs_of_interest = False
-        for pair in pairs_of_interest:
-            if symbol.endswith(pair):
-                is_in_pairs_of_interest = True
-                break
-
+        is_in_pairs_of_interest = any(
+            symbol.endswith(pair) for pair in pairs_of_interest
+        )
         if not is_in_pairs_of_interest:
             self.logger.debug("Ignoring symbol not in pairsOfInterests: %s.", symbol)
             return False
@@ -291,7 +275,7 @@ class BinancePumpAndDumpAlerter:
 
         self.logger.debug("Filtered new listings found: %s.", filtered_symbols_to_add)
 
-        if len(filtered_symbols_to_add) > 0:
+        if filtered_symbols_to_add:
             self.report_generator.send_new_listings(filtered_symbols_to_add)
 
         return filtered_assets
